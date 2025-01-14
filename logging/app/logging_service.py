@@ -1,54 +1,34 @@
-# server/main.py
-from fastapi import FastAPI
-from pydantic import BaseModel
-from typing import Optional
-import time
-
-# Elasticsearch / OpenSearch client
-from elasticsearch import Elasticsearch
+from fastapi import FastAPI, Request
+import uvicorn
+import logging
+import sys
 
 app = FastAPI()
 
-# Initialize the Elasticsearch client
-# Adjust host/port/credentials to match your environment
-es = Elasticsearch(
-    hosts=["http://localhost:9200"],
-    http_auth=("elastic", "changeme"),  # or omit if security is disabled
-    verify_certs=False
-)
+# Just use Python’s built-in logger for demonstration
+logger = logging.getLogger("fastapi-logs")
+logger.setLevel(logging.INFO)
 
-# Define a Pydantic model for incoming log records
-class LogRecord(BaseModel):
-    loggerName: str
-    logLevel: str
-    message: str
-    filename: str
-    lineNo: int
-    created: float  # Unix timestamp
-    extra: Optional[dict] = None  # In case you have extra fields
-
+# Option 1: log to stdout so Promtail can scrape Docker logs.
+stream_handler = logging.StreamHandler(sys.stdout)
+logger.addHandler(stream_handler)
 
 @app.post("/logs")
-async def receive_logs(log_record: LogRecord):
-    """
-    Receive logs via POST request and store them in Elasticsearch.
-    """
-    # Prepare the document for indexing in Elasticsearch
-    doc = {
-        "loggerName": log_record.loggerName,
-        "logLevel": log_record.logLevel,
-        "message": log_record.message,
-        "filename": log_record.filename,
-        "lineNo": log_record.lineNo,
-        "created": log_record.created,
-        "timestamp_indexed": time.time(),  # time the log was indexed
-        "extra": log_record.extra or {},
-    }
-
-    # Index the document into Elasticsearch
-    # You can name the index e.g. "python-logs"
+async def handle_logs(request: Request):
     try:
-        response = es.index(index="python-logs", document=doc)
-        return {"status": "success", "es_response": response}
+        log_data = await request.json()
+        # Format however you want
+        msg = (
+            f"[{log_data.get('logLevel')}] "
+            f"{log_data.get('loggerName')} - "
+            f"{log_data.get('message')} "
+            f"(File: {log_data.get('filename')}, line {log_data.get('lineNo')})"
+        )
+        logger.info(msg)
+        return {"status": "ok"}
     except Exception as e:
-        return {"status": "error", "details": str(e)}
+        logger.error(f"Exception in /logs: {e}")
+        return {"status": "error", "detail": str(e)}
+
+if __name__ == "__main__":
+    uvicorn.run(app, host="0.0.0.0", port=8000)
