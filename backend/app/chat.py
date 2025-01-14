@@ -11,6 +11,8 @@ from phi.agent import Agent, AgentMemory
 from phi.model.openai import OpenAIChat
 from phi.memory.db.postgres import PgMemoryDb
 from phi.storage.agent.postgres import PgAgentStorage
+from set_prompts import get_prompts
+from remote_log_handler import RemoteLogHandler
 
 # Load environment variables
 load_dotenv()
@@ -24,25 +26,11 @@ LOG_URL = os.getenv("LOG_URL")
 logger = logging.getLogger("remote_logger")
 logger.setLevel(logging.INFO)
 
-log_handler = logging.StreamHandler()
+remote_handler = RemoteLogHandler("http://localhost:8000/logs")
 formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
-log_handler.setFormatter(formatter)
-logger.addHandler(log_handler)
+remote_handler.setFormatter(formatter)
+logger.addHandler(remote_handler)
 
-# Optional: Integrate remote logging URL if required
-if LOG_URL:
-    try:
-        from logging.handlers import HTTPHandler
-        remote_handler = HTTPHandler(
-            host=LOG_URL,
-            url="/",
-            method="POST"
-        )
-        remote_handler.setLevel(logging.ERROR)
-        logger.addHandler(remote_handler)
-        logger.info("Remote logger configured successfully.")
-    except Exception as e:
-        logger.error(f"Failed to configure remote logger: {str(e)}")
 
 # FastAPI application initialization
 app = FastAPI()
@@ -54,11 +42,17 @@ class QueryItem(BaseModel):
     session_id: str
     asset_ticker: str
 
+
+instruction_list, guideline_list = get_prompts()
+
+
 # Create a single agent instance
 agent = Agent(
     name="Financial asset recommender",
     model=OpenAIChat(id=MODEL),
-    tools=[],
+    tools=[
+
+    ],
     memory=AgentMemory(
         db=PgMemoryDb(table_name="fin_agent_memory", db_url=DB_URL),
         create_user_memories=True,
@@ -68,6 +62,8 @@ agent = Agent(
         table_name="global_user_sessions",
         db_url=DB_URL
     ),
+    instructions=instruction_list,
+    guidelines=guideline_list,
     session_id=str(uuid.uuid4()),
     user_id="global_agent",
     markdown=False,

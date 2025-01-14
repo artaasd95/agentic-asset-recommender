@@ -1,100 +1,105 @@
-from fastapi import FastAPI, HTTPException
-from pydantic import BaseModel
-from pymongo import MongoClient
-import yfinance as yf
-import numpy as np
-import requests
+from fastapi import FastAPI
+from datetime import date
+import logging
 
-# Initialize FastAPI app
+# Local imports
+from remote_log_handler import RemoteLogHandler
+from models import MainData, FeatureData
+from services import (
+    store_main_data_logic,
+    load_main_data_logic,
+    store_feature_data_logic,
+    load_feature_data_logic,
+    query_feature_data_logic
+)
+
+# ----------------------------
+# Configure your remote logger
+# ----------------------------
+logger = logging.getLogger("remote_logger")
+logger.setLevel(logging.INFO)
+
+remote_handler = RemoteLogHandler("http://localhost:8000/logs")
+formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+remote_handler.setFormatter(formatter)
+logger.addHandler(remote_handler)
+
+# ----------------------------
+# Create your FastAPI instance
+# ----------------------------
 app = FastAPI()
 
-# Initialize MongoDB client
-client = MongoClient("mongodb://localhost:27017/")
-db = client.financial_data
 
-# Define Pydantic models
-class CandleData(BaseModel):
-    date: str
-    open: float
-    high: float
-    low: float
-    close: float
-    volume: int
+# ----------------------------
+# Endpoints
+# ----------------------------
 
-class AssetFeatures(BaseModel):
-    name: str
-    data: dict
-
-# Functions to calculate financial metrics
-def calculate_return(prices):
-    return np.diff(prices) / prices[:-1]
-
-def calculate_risk(prices):
-    returns = calculate_return(prices)
-    return np.std(returns)
-
-# FastAPI routes
-
-@app.get("/load_data/{asset_name}")
-async def load_data(asset_name: str):
+@app.post("/store_data")
+async def store_data_endpoint(data: MainData):
+    """
+    Store main data in MongoDB. 
+    """
+    logger.info("Starting to store main data.")
     try:
-        ticker = yf.Ticker(asset_name)
-        data = ticker.history(period="1y")
+        inserted_id = await store_main_data_logic(data)
+        logger.info(f"Document stored with ID: {inserted_id}")
+        return {"message": "Data stored successfully", "id": inserted_id}
     except Exception as e:
-        raise HTTPException(status_code=404, detail="Asset not available")
+        logger.exception("Exception while storing main data.")
+        return {"error": str(e)}
 
-    if data.empty:
-        raise HTTPException(status_code=404, detail="No data found for this asset")
-
-    prices = data['Close'].values
-    asset_return = calculate_return(prices)
-    asset_risk = calculate_risk(prices)
-
-    candles = [
-        CandleData(
-            date=str(index), open=row['Open'], high=row['High'],
-            low=row['Low'], close=row['Close'], volume=row['Volume']
-        ).dict() for index, row in data.iterrows()
-    ]
-
-    features = AssetFeatures(
-        name=asset_name,
-        data={
-            "return": asset_return.tolist(),
-            "risk": asset_risk.tolist(),
-        }
-    ).dict()
-
-    db.candles.insert_many(candles)
-    db.features.insert_one(features)
-
-    return {"message": f"Data for asset {asset_name} loaded successfully"}
-
-@app.post("/load_all_data")
-async def load_all_data():
-    pass
-
-@app.post("/send_features/{asset_name}")
-async def send_features(asset_name: str, api_url: str):
-    # Fetch asset features from MongoDB
-    feature_doc = db.features.find_one({"name": asset_name})
-    
-    if not feature_doc:
-        raise HTTPException(status_code=404, detail="Features not found for the asset")
-
-    # Construct the payload for the destination API
-    payload = {
-        "name": feature_doc['name'],
-        "data": feature_doc['data']
-    }
-
-    # Send the data to the external API
+@app.get("/load_data/{ticker}")
+async def load_data_endpoint(ticker: str):
+    """
+    Load all main data documents for a given ticker.
+    """
+    logger.info(f"Starting to load main data for ticker: {ticker}")
     try:
-        response = requests.post(api_url, json=payload)
-        response.raise_for_status()
-    except requests.RequestException as e:
-        raise HTTPException(status_code=500, detail=f"Failed to send data: {e}")
+        docs = await load_main_data_logic(ticker)
+        logger.info(f"Data loaded successfully for ticker: {ticker}")
+        return docs
+    except Exception as e:
+        logger.exception("Exception while loading main data.")
+        return {"error": str(e)}
 
-    return {"message": f"Features for asset {asset_name} sent successfully"}
+@app.post("/store_features")
+async def store_features_endpoint(data: FeatureData):
+    """
+    Store feature data in MongoDB.
+    """
+    logger.info("Starting to store feature data.")
+    try:
+        inserted_id = await store_feature_data_logic(data)
+        logger.info(f"Feature document stored with ID: {inserted_id}")
+        return {"message": "Feature data stored successfully", "id": inserted_id}
+    except Exception as e:
+        logger.exception("Exception while storing feature data.")
+        return {"error": str(e)}
 
-# Run the FastAPI application
+@app.get("/load_features/{ticker}")
+async def load_features_endpoint(ticker: str):
+    """
+    Load all feature data documents for a given ticker.
+    """
+    logger.info(f"Starting to load features for ticker: {ticker}")
+    try:
+        docs = await load_feature_data_logic(ticker)
+        logger.info(f"Features loaded successfully for ticker: {ticker}")
+        return docs
+    except Exception as e:
+        logger.exception("Exception while loading feature data.")
+        return {"error": str(e)}
+
+@app.get("/query_features")
+async def query_features_endpoint(name: str, start: date, end: date):
+    """
+    Query feature data by name, start date, and end date.
+    """
+    logger.info(f"Starting to query features with name={name}, start={start}, end={end}")
+    try:
+        docs = await query_feature_data_logic(name, start, end)
+        logger.info("Features queried successfully.")
+        return docs
+    except Exception as e:
+        logger.exception("Exception while querying feature data.")
+        return {"error": str(e)}
