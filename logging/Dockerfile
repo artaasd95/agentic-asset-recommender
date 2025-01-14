@@ -1,20 +1,20 @@
-# Use a lightweight Python image
-FROM python:3.10-slim
+# Dockerfile
+FROM python:3.12-slim
 
-# Set the working directory inside the container
+# Set the working directory
 WORKDIR /app
 
-# Copy only requirements to leverage Docker's cache
-COPY app/requirements.txt /app/requirements.txt
+# Copy requirements first, for efficient builds (layer caching)
+COPY requirements.txt /app/
 
-# Install dependencies
-RUN pip install --no-cache-dir -r /app/requirements.txt
+# Install the dependencies
+RUN pip install --no-cache-dir -r requirements.txt
 
-# Copy the application code
-COPY app /app
+# Copy the rest of the application code
+COPY . /app/
 
-# Expose the port FastAPI will run on
+# Expose the port
 EXPOSE 8000
 
-# Command to run FastAPI via Uvicorn
-CMD ["uvicorn", "logging_service:app", "--host", "0.0.0.0", "--port", "8000"]
+# Run FastAPI via Uvicorn
+CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"]
