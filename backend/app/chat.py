@@ -1,6 +1,7 @@
 import os
 import uuid
 import logging
+from datetime import datetime
 from typing import Dict
 from fastapi import FastAPI, HTTPException
 from fastapi.responses import JSONResponse
@@ -12,6 +13,7 @@ from phi.memory.db.postgres import PgMemoryDb
 from phi.storage.agent.postgres import PgAgentStorage
 from set_prompts import get_prompts
 from remote_log_handler import RemoteLogHandler
+from tools import *
 
 # Load environment variables
 load_dotenv()
@@ -51,7 +53,9 @@ agent = Agent(
     model=OpenAIChat(id=MODEL,
                      api_key=OPENAI_API_KEY),
     tools=[
-
+        perform_calculations_for_tickers,
+        send_raw_data_to_api,
+        send_features_to_api,
     ],
     memory=AgentMemory(
         db=PgMemoryDb(table_name="fin_agent_memory_", db_url=DB_URL),
@@ -74,18 +78,22 @@ agent = Agent(
     debug_mode=False,
     prevent_prompt_leakage=True
 )
+
+
+
 @app.post("/v1/query")
 async def query_agent(request: QueryItem):
     logger.info(f"Query received: {request.query}")
     try:
         # Update agent with new user ID and session ID
+        agent.additional_context = f"current datetime is: {str(datetime.datetime.now())}"
         agent.user_id = request.user_id or str(uuid.uuid4())
         agent.session_id = request.session_id or str(uuid.uuid4())
 
         # Add logic to process the query using the agent
-        response = {}  # Placeholder for agent response logic
+        response = agent.run(f"{request.query} and the ticker is {request.asset_ticker}")
         logger.info("Query processed successfully.")
-        return JSONResponse(content=response)
+        return JSONResponse(content=response.content)
     except Exception as e:
         logger.error(f"Error initiating query: {str(e)}")
         raise HTTPException(status_code=500, detail="Error initiating request processing")

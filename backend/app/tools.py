@@ -1,9 +1,15 @@
+import os
 import yfinance as yf
 import pandas as pd
 import datetime
 import numpy as np
 import requests
 import json
+from dotenv import load_dotenv
+
+VECTOR_DB_URL = os.getenv('VECTOR_DB_URL')
+MONGO_DB_URL = os.getenv('MONGO_DB_URL')
+
 
 def fetch_candlestick_data(tickers, start_date=None, end_date=None):
     """Fetch candlestick (OHLCV) data for a single ticker or list of tickers from yfinance.
@@ -89,8 +95,8 @@ def get_risk_volatility_return(close_series):
         'annualized_return': ann_return
     }
 
-def perform_calculations_for_tickers(tickers, start_date=None, end_date=None):
-    """Perform calculations for tickers, including fetching data and computing metrics.
+def perform_calculations_for_tickers(tickers, start_date=None, end_date=None) -> str:
+    """Perform calculations for ticker or multiple tickers, including fetching data and computing metrics.
 
     Args:
         tickers (str or list of str): Ticker symbols.
@@ -114,18 +120,19 @@ def perform_calculations_for_tickers(tickers, start_date=None, end_date=None):
             calc = get_risk_volatility_return(close_series)
             results[ticker] = calc
 
-    return results
+    return str(results)
 
-def send_raw_data_to_api(url, raw_data):
+def send_raw_data_to_api(raw_data):
     """Send raw data (e.g., candlestick data) to another URL as JSON to an API.
 
     Args:
-        url (str): API endpoint.
         raw_data (dict): JSON-serializable object containing raw data.
 
     Returns:
         requests.Response: Response object from the API call.
     """
+    url = f"{MONGO_DB_URL}/store_data"
+
     payload = json.dumps(raw_data, default=str)
     return perform_api_call(url=url, method="POST", data=payload)
 
@@ -157,15 +164,16 @@ def perform_api_call(url, method="GET", data=None, headers=None):
 
     return response
 
-def send_features_to_api(url, features_dict):
+def send_features_to_api(features_dict):
     """Send calculated features (risk, volatility, return, etc.) to another URL as JSON.
 
     Args:
-        url (str): API endpoint.
         features_dict (dict): Dictionary containing the calculated features.
 
     Returns:
         requests.Response: Response object from the API call.
     """
+    url = f"{VECTOR_DB_URL}/store"
+
     payload = json.dumps(features_dict)
     return perform_api_call(url=url, method="POST", data=payload)
