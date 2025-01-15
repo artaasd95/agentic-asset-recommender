@@ -1,5 +1,3 @@
-# main.py
-
 from typing import List, Optional
 from fastapi import FastAPI, Query
 from pydantic import BaseModel
@@ -10,7 +8,7 @@ app = FastAPI()
 
 # ---- Configure your MongoDB connection here ----
 # Point to your Mongo container or local Mongo instance
-MONGO_URL = "mongodb://localhost:27017"  # or "mongodb://mongo:27017" if using docker-compose
+MONGO_URL = "mongodb://mongodb:27017"  # or "mongodb://mongo:27017" if using docker-compose
 client = MongoClient(MONGO_URL)
 db = client["logs_db"]
 logs_collection = db["logs"]
@@ -31,7 +29,7 @@ def create_log(entry: LogEntry):
     Store the log entry in the MongoDB collection.
     """
     # Convert to dictionary
-    entry_dict = entry.dict()
+    entry_dict = entry.model_dump()
     # Insert into MongoDB
     logs_collection.insert_one(entry_dict)
     return {"message": "Log entry stored successfully"}

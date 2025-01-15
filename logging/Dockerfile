@@ -1,13 +1,17 @@
-# Dockerfile
 FROM python:3.12-slim
 
-# Set the working directory
+# Install system dependencies
+RUN apt-get update && apt-get install -y \
+    gcc \
+    python3-dev \
+    build-essential \
+    libffi-dev \
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/*
+
+# Install the Python dependencies
+COPY requirements.txt /app/requirements.txt
 WORKDIR /app
-
-# Copy requirements first, for efficient builds (layer caching)
-COPY requirements.txt /app/
-
-# Install the dependencies
 RUN pip install --no-cache-dir -r requirements.txt
 
 # Copy the rest of the application code
@@ -17,4 +21,4 @@ COPY . /app/
 EXPOSE 8000
 
 # Run FastAPI via Uvicorn
-CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"]
+CMD ["uvicorn", "app.logging_service:app", "--host", "0.0.0.0", "--port", "8000"]

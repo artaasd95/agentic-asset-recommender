@@ -1,5 +1,4 @@
 import os
-import re
 import uuid
 import logging
 from typing import Dict
@@ -19,14 +18,15 @@ load_dotenv()
 
 # Retrieve variables from .env
 MODEL = os.getenv("MODEL", 'gpt-4o-mini')
-DB_URL = os.getenv("DB_URL")
-LOG_URL = os.getenv("LOG_URL")
+DB_URL = os.getenv("DB_URL", "")
+LOG_URL = os.getenv("LOG_URL", "")
+OPENAI_API_KEY = os.getenv("OPENAI_API_KEY", "")
 
 # Configure remote logger
 logger = logging.getLogger("remote_logger")
 logger.setLevel(logging.INFO)
 
-remote_handler = RemoteLogHandler("http://localhost:8000/logs")
+remote_handler = RemoteLogHandler(LOG_URL)
 formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 remote_handler.setFormatter(formatter)
 logger.addHandler(remote_handler)
@@ -45,21 +45,21 @@ class QueryItem(BaseModel):
 
 instruction_list, guideline_list = get_prompts()
 
-
 # Create a single agent instance
 agent = Agent(
     name="Financial asset recommender",
-    model=OpenAIChat(id=MODEL),
+    model=OpenAIChat(id=MODEL,
+                     api_key=OPENAI_API_KEY),
     tools=[
 
     ],
     memory=AgentMemory(
-        db=PgMemoryDb(table_name="fin_agent_memory", db_url=DB_URL),
+        db=PgMemoryDb(table_name="fin_agent_memory_", db_url=DB_URL),
         create_user_memories=True,
         create_session_summary=True
     ),
     storage=PgAgentStorage(
-        table_name="global_user_sessions",
+        table_name="global_user_sessions_",
         db_url=DB_URL
     ),
     instructions=instruction_list,
@@ -74,7 +74,6 @@ agent = Agent(
     debug_mode=False,
     prevent_prompt_leakage=True
 )
-
 @app.post("/v1/query")
 async def query_agent(request: QueryItem):
     logger.info(f"Query received: {request.query}")
