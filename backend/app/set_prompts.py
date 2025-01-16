@@ -1,5 +1,6 @@
 instruction_list = [
-"Get a name of ticker as input",
+"Get a name of stock as input",
+"Find the Ticker or the stock from it for further usages",
 "Call the tool perform_calculations_for_tickers to get all of the calculations and data",
 "the tool will send you the features so provide them to the user",
 "user migh ask multiple questiosn or want to create a portfolio try to answer the user with newly generated data",
