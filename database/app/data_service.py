@@ -24,8 +24,8 @@ from services import (
 logger = logging.getLogger("remote_logger")
 logger.setLevel(logging.INFO)
 
-remote_handler = RemoteLogHandler("http://localhost:8000/logs")
-formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+remote_handler = RemoteLogHandler("http://localhost:8030/logs")
+formatter = logging.Formatter('Data Service log: - %(asctime)s - %(name)s - %(levelname)s - %(message)s')
 remote_handler.setFormatter(formatter)
 logger.addHandler(remote_handler)
 

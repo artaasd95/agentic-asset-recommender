@@ -1,0 +1,29 @@
+version: "3.8"
+
+services:
+  api_service:
+    build: .
+    container_name: fastapi_service
+    ports:
+      - "8010:8000"
+    depends_on:
+      - mongodb
+      - qdrant
+    environment:
+      - MONGO_URI=mongodb://mongodb:27017
+      - QDRANT_HOST=http://qdrant:6333
+    restart: always
+
+  mongodb:
+    image: mongodb/mongodb-community-server:latest
+    container_name: mongodb
+    ports:
+      - "27017:27017"
+    restart: always
+
+  qdrant:
+    image: qdrant/qdrant
+    container_name: qdrant
+    ports:
+      - "6333:6333"
+    restart: always

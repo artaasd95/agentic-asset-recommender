@@ -21,6 +21,7 @@ load_dotenv()
 # Retrieve variables from .env
 MODEL = os.getenv("MODEL", 'gpt-4o-mini')
 DB_URL = os.getenv("DB_URL", "")
+DATA_SERVICE_URL = os.getenv("DATA_SERVICE_URL", "")
 LOG_URL = os.getenv("LOG_URL", "")
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY", "")
 
