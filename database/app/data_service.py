@@ -1,3 +1,4 @@
+import os
 from fastapi import FastAPI, HTTPException
 from datetime import date
 import logging
@@ -6,7 +7,7 @@ from qdrant_client import QdrantClient
 from qdrant_client.http.models import Distance, VectorParams
 from langchain_openai import OpenAIEmbeddings
 from pydantic import BaseModel
-
+from dotenv import load_dotenv
 # Local imports
 from remote_log_handler import RemoteLogHandler
 from models import MainData, FeatureData
@@ -17,14 +18,15 @@ from services import (
     load_feature_data_logic,
     query_feature_data_logic
 )
-
+load_dotenv()
 # ----------------------------
 # Configure your remote logger
 # ----------------------------
+LOG_URL = os.getenv("LOG_URL")
 logger = logging.getLogger("remote_logger")
 logger.setLevel(logging.INFO)
 
-remote_handler = RemoteLogHandler("http://localhost:8030/logs")
+remote_handler = RemoteLogHandler(LOG_URL)
 formatter = logging.Formatter('Data Service log: - %(asctime)s - %(name)s - %(levelname)s - %(message)s')
 remote_handler.setFormatter(formatter)
 logger.addHandler(remote_handler)
@@ -116,7 +118,9 @@ async def query_features_endpoint(name: str, start: date, end: date):
 
 
 # Connect to Qdrant and define a collection
-client = QdrantClient(":memory:")  # for in-memory DB, or replace with "http://<Qdrant server address>:<port>"
+QDRANT_URI = os.getenv("QDRANT_URI", ":memory:")
+client = QdrantClient(QDRANT_URI)  # for in-memory DB, or replace with "http://<Qdrant server address>:<port>"
+
 collection_name = "demo_collection"
 client.create_collection(
     collection_name=collection_name,
