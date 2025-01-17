@@ -89,15 +89,15 @@ project-root/
    cd agentic-asset-recommender
    ```
 
-2. **Set up Python environment** (for the chat-core and additional scripts):
+2. **Change to main directory**:
    ```bash
-   python -m venv venv
-   source venv/bin/activate  # or .\venv\Scripts\activate on Windows
-   pip install -r requirements.txt
+   cd agentic-asset-recommender
    ```
 
-3. **Configure environment variables**:
-   - Create an `.env` file or export variables for the needed variables in each service
+3. **Run docker compose**:
+   ```bash
+   docker-compose up --build
+   ```
 
 ---
 
