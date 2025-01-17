@@ -1,3 +1,5 @@
+# main.py
+
 from typing import List, Optional
 from fastapi import FastAPI, Query
 from pydantic import BaseModel
@@ -29,7 +31,7 @@ def create_log(entry: LogEntry):
     Store the log entry in the MongoDB collection.
     """
     # Convert to dictionary
-    entry_dict = entry.model_dump()
+    entry_dict = entry.dict()
     # Insert into MongoDB
     logs_collection.insert_one(entry_dict)
     return {"message": "Log entry stored successfully"}

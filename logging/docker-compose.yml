@@ -1,0 +1,32 @@
+version: '3.9'
+
+services:
+  fastapi-logger-service:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "8030:8000"
+    networks:
+      - app-network
+    depends_on:
+      - mongodb
+    environment:
+      - MONGO_URI=mongodb://mongodb:27017
+
+  mongodb:
+    image: mongodb/mongodb-community-server:latest
+    container_name: mongodb
+    ports:
+      - "27017:27017"
+    networks:
+      - app-network
+    volumes:
+      - mongodb_data:/data/db
+
+networks:
+  app-network:
+    driver: bridge
+
+volumes:
+  mongodb_data:
