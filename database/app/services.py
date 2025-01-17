@@ -3,7 +3,7 @@ from typing import List
 from datetime import datetime, date
 from pymongo.results import InsertOneResult
 from dotenv import load_dotenv
-from models import MainData, FeatureData
+from app.models import MainData, FeatureData
 from motor.motor_asyncio import AsyncIOMotorClient
 
 load_dotenv()

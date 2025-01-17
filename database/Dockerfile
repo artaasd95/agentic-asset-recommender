@@ -1,9 +1,7 @@
 # Use the official Python image as the base image
 FROM python:3.12-slim
 
-# Set environment variables
-ENV PYTHONUNBUFFERED=1
-ENV PYTHONDONTWRITEBYTECODE=1
+
 WORKDIR /app
 
 # Install system dependencies

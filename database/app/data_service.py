@@ -7,17 +7,17 @@ from qdrant_client import QdrantClient
 from qdrant_client.http.models import Distance, VectorParams
 from langchain_openai import OpenAIEmbeddings
 from pydantic import BaseModel
-from dotenv import load_dotenv
 # Local imports
-from remote_log_handler import RemoteLogHandler
-from models import MainData, FeatureData
-from services import (
+from app.remote_log_handler import RemoteLogHandler
+from app.models import MainData, FeatureData
+from app.services import (
     store_main_data_logic,
     load_main_data_logic,
     store_feature_data_logic,
     load_feature_data_logic,
     query_feature_data_logic
 )
+from dotenv import load_dotenv
 load_dotenv()
 # ----------------------------
 # Configure your remote logger
