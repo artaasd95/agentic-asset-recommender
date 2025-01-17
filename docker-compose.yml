@@ -1,0 +1,68 @@
+version: '3.9'
+
+services:
+  database:
+    build:
+      context: ./database  # Corrected path
+      dockerfile: Dockerfile  # Dockerfile is inside database/
+    container_name: database_service
+    ports:
+      - "8010:8000"
+    depends_on:
+      - mongodb
+      - qdrant
+    environment:
+      - MONGO_URI=mongodb://mongodb:27017
+      - QDRANT_URI=http://qdrant:6333
+    restart: always
+    networks:
+      - app-network
+
+  fastapi-logger-service:
+    build:
+      context: ./logging  # Corrected path
+      dockerfile: Dockerfile  # Dockerfile is inside logging/
+    container_name: fastapi_logger
+    ports:
+      - "8030:8000"
+    depends_on:
+      - mongodb
+    environment:
+      - MONGO_URI=mongodb://mongodb:27017
+    restart: always
+    networks:
+      - app-network
+
+  mongodb:
+    image: mongodb/mongodb-community-server:latest
+    container_name: mongodb
+    ports:
+      - "27017:27017"
+    restart: always
+    networks:
+      - app-network
+    volumes:
+      - mongodb_data:/data/db
+
+  qdrant:
+    image: qdrant/qdrant
+    container_name: qdrant
+    ports:
+      - "6333:6333"
+    restart: always
+    networks:
+      - app-network
+
+networks:
+  app-network:
+    driver: bridge
+
+volumes:
+  mongodb_data:
+
+
+# Ports Mapping:
+# Main chat API  -> 8000
+# Database API   -> 8010
+# Frontend/UI    -> 8020 (if needed in future)
+# Logger Service -> 8030

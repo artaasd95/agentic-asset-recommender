@@ -1,17 +1,18 @@
-# main.py
-
+import os
 from typing import List, Optional
 from fastapi import FastAPI, Query
 from pydantic import BaseModel
 from datetime import datetime
 from pymongo import MongoClient
+from dotenv import load_dotenv
+load_dotenv()
 
 app = FastAPI()
 
 # ---- Configure your MongoDB connection here ----
 # Point to your Mongo container or local Mongo instance
-MONGO_URL = "mongodb://mongodb:27017"  # or "mongodb://mongo:27017" if using docker-compose
-client = MongoClient(MONGO_URL)
+MONGO_URI = os.getenv("MONGO_URI", "mongodb://mongodb:27017")
+client = MongoClient(MONGO_URI)
 db = client["logs_db"]
 logs_collection = db["logs"]
 

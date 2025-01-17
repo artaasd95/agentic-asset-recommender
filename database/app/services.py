@@ -1,13 +1,16 @@
+import os
 from typing import List
 from datetime import datetime, date
 from pymongo.results import InsertOneResult
-
+from dotenv import load_dotenv
 from models import MainData, FeatureData
 from motor.motor_asyncio import AsyncIOMotorClient
 
+load_dotenv()
+MONGO_URI = os.getenv("MONGO_URI", "mongodb://mongo:27017")
 # Create a global, shared Mongo client (no event handlers).
-mongo_client = AsyncIOMotorClient("mongodb://localhost:27017")
-database = mongo_client["mydatabase"]
+mongo_client = AsyncIOMotorClient(MONGO_URI)
+database = mongo_client["asset_database"]
 
 
 async def store_main_data_logic(data: MainData) -> str:
