@@ -60,7 +60,7 @@ project-root/
 │   
 │
 ├─ frontend/
-│   └─ ...
+│   └─ streamlit
 │
 ├─ README.md
 └─ ...
@@ -69,7 +69,7 @@ project-root/
 - **chat-core**: Contains the main logic for the chat system and analysis engine.  
 - **logging-service**: Implements the FastAPI-based logging system, storing logs in MongoDB.  
 - **data-services**: Manages connections to GDRant (for vector embeddings) and MongoDB (for OHLC data).  
-- **frontend**: Work in progress for the UI.
+- **frontend**: Streamlit Interface.
 
 ---
 
