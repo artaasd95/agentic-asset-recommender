@@ -53,6 +53,19 @@ services:
     networks:
       - app-network
 
+  frontend:
+    build:
+      context: .  # Assuming the Dockerfile is in the root directory
+      dockerfile: Dockerfile  # Use the provided Dockerfile
+    container_name: frontend_service
+    ports:
+      - "8020:8000"  # Map host port 8020 to container port 8000
+    depends_on:
+      - database  # Add dependencies if needed
+    restart: always
+    networks:
+      - app-network
+
 networks:
   app-network:
     driver: bridge
@@ -60,9 +73,8 @@ networks:
 volumes:
   mongodb_data:
 
-
 # Ports Mapping:
 # Main chat API  -> 8000
 # Database API   -> 8010
-# Frontend/UI    -> 8020 (if needed in future)
+# Frontend/UI    -> 8020
 # Logger Service -> 8030
